@@ -11,7 +11,10 @@
     "generate": "yarn tsoa && yarn build",
     "test": "yarn run generate && jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "typeorm": "ts-node-dev -r tsconfig-paths/register ./node_modules/typeorm/cli.js",
+    "migration:generate": "yarn typeorm migration:generate -d src/config/database.ts",
+    "migration:run": "yarn typeorm migration:run -d src/config/database.ts"
   },
   "keywords": [],
   "author": "",
@@ -36,6 +39,8 @@
     "supertest": "^7.1.0",
     "ts-jest": "^29.3.1",
     "ts-node-dev": "^2.0.0",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.3.3"
-  }
+  },
+  "packageManager": "yarn@4.1.1"
 }
