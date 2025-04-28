@@ -1,10 +1,7 @@
 import { Area } from "../models/Area";
 import { DatabaseContext } from "../config/database-context";
 import { Repository, QueryFailedError } from "typeorm";
-import { AreaNotFoundError } from "../errors/AreaNotFoundError";
-import { InvalidForeignKeyError } from "../errors/InvalidForeignKeyError";
-import { InvalidDataError } from "../errors/InvalidDataError";
-import { DependencyExistsError } from "../errors/DependencyExistsError";
+import { ApiError } from "../utils/ApiError";
 
 export class AreaService {
     private areaRepository: Repository<Area>;
@@ -25,7 +22,7 @@ export class AreaService {
             relations: ["plant", "equipment", "equipment.parts"]
         });
         if (!area) {
-            throw new AreaNotFoundError();
+            throw ApiError.notFound("Area not found", { id });
         }
         return area;
     }
@@ -40,10 +37,10 @@ export class AreaService {
             }) as Promise<Area>;
         } catch (error) {
             if (error instanceof QueryFailedError && error.message.includes('FOREIGN KEY')) {
-                throw new InvalidForeignKeyError("Invalid plant ID");
+                throw ApiError.validation("Invalid plant ID", { plantId: data.plantId, error: error.message });
             }
             if (error instanceof QueryFailedError) {
-                throw new InvalidDataError("Invalid area data");
+                throw ApiError.validation("Invalid area data", { data, error: error.message });
             }
             throw error;
         }
@@ -56,7 +53,7 @@ export class AreaService {
                 relations: ["plant"]
             });
             if (!area) {
-                throw new AreaNotFoundError();
+                throw ApiError.notFound("Area not found", { id });
             }
 
             Object.assign(area, data);
@@ -67,26 +64,62 @@ export class AreaService {
             }) as Promise<Area>;
         } catch (error) {
             if (error instanceof QueryFailedError) {
-                throw new InvalidDataError("Invalid area data");
+                throw ApiError.validation("Invalid area data", { data, error: error.message });
             }
             throw error;
         }
     }
 
     public async delete(id: string): Promise<void> {
+        // Buscar área com equipamentos e vizinhos associados
         const area = await this.areaRepository.findOne({ 
             where: { id },
-            relations: ["equipment"]
+            relations: ["equipment", "neighbors", "neighborOf"]
         });
+        
         if (!area) {
-            throw new AreaNotFoundError();
+            throw ApiError.notFound("Area not found", { id });
+        }
+
+        // Verificar se a área possui equipamentos associados
+        if (area.equipment && area.equipment.length > 0) {
+            const equipmentNames = area.equipment.map(eq => eq.name);
+            throw ApiError.dependencyConflict(
+                "Cannot delete area with associated equipment", 
+                { 
+                    areaId: id, 
+                    areaName: area.name,
+                    dependentEquipment: equipmentNames,
+                    equipmentCount: area.equipment.length 
+                }
+            );
+        }
+
+        // Verificar se a área possui relacionamentos de vizinhança
+        const hasNeighborRelationships = 
+            (area.neighbors && area.neighbors.length > 0) || 
+            (area.neighborOf && area.neighborOf.length > 0);
+
+        if (hasNeighborRelationships) {
+            const neighborCount = (area.neighbors?.length || 0) + (area.neighborOf?.length || 0);
+            throw ApiError.dependencyConflict(
+                "Cannot delete area with neighbor relationships", 
+                { 
+                    areaId: id, 
+                    areaName: area.name,
+                    neighborCount: neighborCount
+                }
+            );
         }
 
         try {
             await this.areaRepository.remove(area);
         } catch (error) {
             if (error instanceof QueryFailedError) {
-                throw new DependencyExistsError("Cannot delete area with associated equipment");
+                throw ApiError.dependencyConflict(
+                    "Cannot delete area due to database constraints", 
+                    { error: error.message }
+                );
             }
             throw error;
         }
