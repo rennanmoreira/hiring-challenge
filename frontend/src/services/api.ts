@@ -9,6 +9,18 @@ const api = axios.create({
   },
 });
 
+// Interceptor para adicionar o token de autenticação
+api.interceptors.request.use((config) => {
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
 export interface Plant {
   id: string;
   name: string;
@@ -35,6 +47,51 @@ export interface Equipment {
   initialOperationsDate: string;
   areaId: string;
   area?: Area;
+  areas?: Area[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface User {
+  id: string;
+  username: string;
+  name: string;
+  email: string;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  token: string;
+  user: User;
+}
+
+export interface AreaNeighbor {
+  id: string;
+  areaId: string;
+  neighborAreaId: string;
+  area?: Area;
+  neighborArea?: Area;
+  createdByUserId: string;
+  updatedByUserId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EquipmentArea {
+  id: string;
+  equipmentId: string;
+  areaId: string;
+  equipment?: Equipment;
+  area?: Area;
+  createdByUserId?: string; // Agora opcional, será adicionado automaticamente pelo backend
+  updatedByUserId?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -94,4 +151,44 @@ export const partApi = {
   update: (id: string, data: Partial<Omit<Part, 'id' | 'createdAt' | 'updatedAt'>>) =>
     api.put<Part>(`/parts/${id}`, data),
   delete: (id: string) => api.delete(`/parts/${id}`),
-}; 
+};
+
+export const areaNeighborApi = {
+  getAll: () => api.get<AreaNeighbor[]>('/area-neighbors'),
+  getByAreaId: (areaId: string) => api.get<AreaNeighbor[]>(`/area-neighbors?areaId=${areaId}`),
+  getById: (id: string) => api.get<AreaNeighbor>(`/area-neighbors/${id}`),
+  create: (data: Omit<AreaNeighbor, 'id' | 'createdAt' | 'updatedAt'>) => 
+    api.post<AreaNeighbor>('/area-neighbors', data),
+  update: (id: string, data: Partial<Omit<AreaNeighbor, 'id' | 'createdAt' | 'updatedAt'>>) =>
+    api.put<AreaNeighbor>(`/area-neighbors/${id}`, data),
+  delete: (id: string) => api.delete(`/area-neighbors/${id}`),
+};
+
+export const equipmentAreaApi = {
+  getAll: () => api.get<EquipmentArea[]>('/equipment-areas'),
+  getByEquipmentId: (equipmentId: string) => api.get<EquipmentArea[]>(`/equipment-areas?equipmentId=${equipmentId}`),
+  getByAreaId: (areaId: string) => api.get<EquipmentArea[]>(`/equipment-areas?areaId=${areaId}`),
+  getById: (id: string) => api.get<EquipmentArea>(`/equipment-areas/${id}`),
+  create: (data: Pick<EquipmentArea, 'equipmentId' | 'areaId'>) =>
+    api.post<EquipmentArea>('/equipment-areas', data),
+  update: (id: string, data: Partial<Pick<EquipmentArea, 'equipmentId' | 'areaId'>>) =>
+    api.put<EquipmentArea>(`/equipment-areas/${id}`, data),
+  delete: (id: string) => api.delete(`/equipment-areas/${id}`),
+};
+
+export const userApi = {
+  login: (data: LoginRequest) => api.post<LoginResponse>('/users/login', data),
+  me: (token?: string) => {
+    const config = token ? { headers: { Authorization: `Bearer ${token}` } } : undefined;
+    return api.get<User>('/users/me', config);
+  },
+  getAll: () => api.get<User[]>('/users'),
+  getById: (id: string) => api.get<User>(`/users/${id}`),
+  create: (data: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) => api.post<User>('/users', data),
+  update: (id: string, data: Partial<Omit<User, 'id' | 'createdAt' | 'updatedAt'>>) => api.put<User>(`/users/${id}`, data),
+  delete: (id: string) => api.delete(`/users/${id}`),
+  changePassword: (userId: string, data: { currentPassword: string; newPassword: string }) => 
+    api.put(`/users/${userId}/password`, data),
+  toggleStatus: (userId: string, isActive: boolean) => 
+    api.put(`/users/${userId}/status`, { isActive }),
+};

@@ -15,7 +15,13 @@ import {
 } from "antd";
 import { useQuery, useMutation, useQueryClient } from "react-query";
 import { useRouter } from "next/navigation";
-import { areaApi, areaNeighborApi, plantApi } from "@/services/api";
+import {
+  Area,
+  areaApi,
+  AreaNeighbor,
+  areaNeighborApi,
+  plantApi,
+} from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 import LoginModal from "@/components/LoginModal";
 import { PlusOutlined, DeleteOutlined, LinkOutlined } from "@ant-design/icons";

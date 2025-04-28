@@ -7,6 +7,7 @@ import {
   AppstoreOutlined,
   ToolOutlined,
   SettingOutlined,
+  NodeIndexOutlined,
 } from "@ant-design/icons";
 
 const { Header, Content, Sider } = Layout;
@@ -34,6 +35,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       key: "/areas",
       icon: <AppstoreOutlined />,
       label: "Areas",
+    },
+    {
+      key: "/area-neighbors",
+      icon: <NodeIndexOutlined />,
+      label: "Neighbors",
     },
     {
       key: "/equipment",

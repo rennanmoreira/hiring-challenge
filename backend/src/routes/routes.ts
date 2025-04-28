@@ -259,24 +259,15 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "EquipmentAreaNotFoundError": {
+    "ApiError": {
         "dataType": "refObject",
         "properties": {
             "name": {"dataType":"string","required":true},
             "message": {"dataType":"string","required":true},
             "stack": {"dataType":"string"},
             "status": {"dataType":"double","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "InvalidForeignKeyError": {
-        "dataType": "refObject",
-        "properties": {
-            "name": {"dataType":"string","required":true},
-            "message": {"dataType":"string","required":true},
-            "stack": {"dataType":"string"},
-            "status": {"dataType":"double","required":true},
+            "type": {"dataType":"string","required":true},
+            "details": {"dataType":"any","required":true},
         },
         "additionalProperties": false,
     },
@@ -291,7 +282,35 @@ const models: TsoaRoute.Models = {
         "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"equipmentId":{"dataType":"string"},"areaId":{"dataType":"string"}},"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ObjectLiteral": {
+        "dataType": "refObject",
+        "properties": {
+        },
+        "additionalProperties": {"dataType":"any"},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UpdateResult": {
+        "dataType": "refObject",
+        "properties": {
+            "raw": {"dataType":"any","required":true},
+            "affected": {"dataType":"double"},
+            "generatedMaps": {"dataType":"array","array":{"dataType":"refObject","ref":"ObjectLiteral"},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "AreaNeighborNotFoundError": {
+        "dataType": "refObject",
+        "properties": {
+            "name": {"dataType":"string","required":true},
+            "message": {"dataType":"string","required":true},
+            "stack": {"dataType":"string"},
+            "status": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "InvalidForeignKeyError": {
         "dataType": "refObject",
         "properties": {
             "name": {"dataType":"string","required":true},
@@ -1201,7 +1220,6 @@ export function RegisterRoutes(app: Router) {
                 equipmentAreaId: {"in":"path","name":"equipmentAreaId","required":true,"dataType":"string"},
         };
         app.delete('/equipment-areas/:equipmentAreaId',
-            authenticateMiddleware([{"jwt":[]}]),
             ...(fetchMiddlewares<RequestHandler>(EquipmentAreaController)),
             ...(fetchMiddlewares<RequestHandler>(EquipmentAreaController.prototype.deleteEquipmentArea)),
 

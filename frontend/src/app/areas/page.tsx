@@ -13,11 +13,13 @@ import {
 } from "antd";
 import { useQuery, useMutation, useQueryClient } from "react-query";
 import { areaApi, plantApi, Area, Plant } from "@/services/api";
+import { ApiErrorHandler } from "@/utils/apiErrorHandler";
 import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
   RightOutlined,
+  NodeIndexOutlined,
 } from "@ant-design/icons";
 import type { TableProps } from "antd";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -57,6 +59,9 @@ export default function AreasPage() {
         setIsModalVisible(false);
         form.resetFields();
       },
+      onError: (error: any) => {
+        message.error(ApiErrorHandler.getErrorConfig(error));
+      },
     }
   );
 
@@ -71,6 +76,9 @@ export default function AreasPage() {
         form.resetFields();
         setEditingArea(null);
       },
+      onError: (error: any) => {
+        message.error(ApiErrorHandler.getErrorConfig(error));
+      },
     }
   );
 
@@ -78,6 +86,9 @@ export default function AreasPage() {
     onSuccess: () => {
       queryClient.invalidateQueries("areas");
       message.success("Area deleted successfully");
+    },
+    onError: (error: any) => {
+      message.error(ApiErrorHandler.getErrorConfig(error));
     },
   });
 
@@ -128,6 +139,14 @@ export default function AreasPage() {
             }}
           >
             Equipment
+          </Button>
+          <Button
+            icon={<NodeIndexOutlined />}
+            onClick={() => {
+              router.push(`/area-neighbors?areaId=${record.id}`);
+            }}
+          >
+            Neighbors
           </Button>
           <Button
             icon={<DeleteOutlined />}

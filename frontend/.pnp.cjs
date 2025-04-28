@@ -27,7 +27,7 @@ const RAW_RUNTIME_STATE =
         "packageLocation": "./",\
         "packageDependencies": [\
           ["@ant-design/icons", "virtual:60101091d688c8888bd798081fe0c8632484795c356efd5fc9acade6abd7f1d01c13ea476b776ceb5bcf378b4f67edf58f61cc43ae8ed2599492b107a2a08814#npm:5.6.1"],\
-          ["@types/node", "npm:20.17.30"],\
+          ["@types/node", "npm:22.15.3"],\
           ["@types/react", "npm:18.3.20"],\
           ["@types/react-dom", "virtual:60101091d688c8888bd798081fe0c8632484795c356efd5fc9acade6abd7f1d01c13ea476b776ceb5bcf378b4f67edf58f61cc43ae8ed2599492b107a2a08814#npm:18.3.6"],\
           ["antd", "virtual:60101091d688c8888bd798081fe0c8632484795c356efd5fc9acade6abd7f1d01c13ea476b776ceb5bcf378b4f67edf58f61cc43ae8ed2599492b107a2a08814#npm:5.24.8"],\
@@ -812,11 +812,11 @@ const RAW_RUNTIME_STATE =
       }]\
     ]],\
     ["@types/node", [\
-      ["npm:20.17.30", {\
-        "packageLocation": "../../../.yarn/berry/cache/@types-node-npm-20.17.30-fc4dd33c3d-10c0.zip/node_modules/@types/node/",\
+      ["npm:22.15.3", {\
+        "packageLocation": "../../../.yarn/berry/cache/@types-node-npm-22.15.3-ab71dd4f9d-10c0.zip/node_modules/@types/node/",\
         "packageDependencies": [\
-          ["@types/node", "npm:20.17.30"],\
-          ["undici-types", "npm:6.19.8"]\
+          ["@types/node", "npm:22.15.3"],\
+          ["undici-types", "npm:6.21.0"]\
         ],\
         "linkType": "HARD"\
       }]\
@@ -3786,7 +3786,7 @@ const RAW_RUNTIME_STATE =
         "packageDependencies": [\
           ["opwell-frontend", "workspace:."],\
           ["@ant-design/icons", "virtual:60101091d688c8888bd798081fe0c8632484795c356efd5fc9acade6abd7f1d01c13ea476b776ceb5bcf378b4f67edf58f61cc43ae8ed2599492b107a2a08814#npm:5.6.1"],\
-          ["@types/node", "npm:20.17.30"],\
+          ["@types/node", "npm:22.15.3"],\
           ["@types/react", "npm:18.3.20"],\
           ["@types/react-dom", "virtual:60101091d688c8888bd798081fe0c8632484795c356efd5fc9acade6abd7f1d01c13ea476b776ceb5bcf378b4f67edf58f61cc43ae8ed2599492b107a2a08814#npm:18.3.6"],\
           ["antd", "virtual:60101091d688c8888bd798081fe0c8632484795c356efd5fc9acade6abd7f1d01c13ea476b776ceb5bcf378b4f67edf58f61cc43ae8ed2599492b107a2a08814#npm:5.24.8"],\
@@ -5885,10 +5885,10 @@ const RAW_RUNTIME_STATE =
       }]\
     ]],\
     ["undici-types", [\
-      ["npm:6.19.8", {\
-        "packageLocation": "../../../.yarn/berry/cache/undici-types-npm-6.19.8-9f12285b7a-10c0.zip/node_modules/undici-types/",\
+      ["npm:6.21.0", {\
+        "packageLocation": "../../../.yarn/berry/cache/undici-types-npm-6.21.0-eb2b0ed56a-10c0.zip/node_modules/undici-types/",\
         "packageDependencies": [\
-          ["undici-types", "npm:6.19.8"]\
+          ["undici-types", "npm:6.21.0"]\
         ],\
         "linkType": "HARD"\
       }]\
