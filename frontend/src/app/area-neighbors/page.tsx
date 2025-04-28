@@ -12,6 +12,8 @@ import {
   Table,
   Tooltip,
   message,
+  Tabs,
+  Divider,
 } from "antd";
 import { useQuery, useMutation, useQueryClient } from "react-query";
 import { useRouter } from "next/navigation";
@@ -19,6 +21,7 @@ import {
   Area,
   areaApi,
   AreaNeighbor,
+  AreaNeighborHistoryEntry,
   areaNeighborApi,
   plantApi,
 } from "@/services/api";
@@ -30,6 +33,7 @@ import { useSearchParams } from "next/navigation";
 import { ApiErrorHandler } from "@/utils/apiErrorHandler";
 
 const { Title, Text } = Typography;
+const { TabPane } = Tabs;
 
 export default function AreaNeighborsPage() {
   const [form] = Form.useForm();
@@ -52,6 +56,18 @@ export default function AreaNeighborsPage() {
     () =>
       selectedArea
         ? areaNeighborApi.getByAreaId(selectedArea.id).then((res) => res.data)
+        : Promise.resolve([]),
+    {
+      enabled: !!selectedArea,
+    }
+  );
+
+  // Fetch area neighbor history
+  const { data: neighborHistory, isLoading: historyLoading } = useQuery(
+    ["neighborHistory", selectedArea?.id],
+    () =>
+      selectedArea
+        ? areaNeighborApi.getHistory(selectedArea.id).then((res) => res.data)
         : Promise.resolve([]),
     {
       enabled: !!selectedArea,
@@ -84,7 +100,9 @@ export default function AreaNeighborsPage() {
       areaNeighborApi.create(data),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries("areaNeighbors");
+        // Invalidate both neighbors and history queries
+        queryClient.invalidateQueries(["areaNeighbors", selectedArea?.id]);
+        queryClient.invalidateQueries(["neighborHistory", selectedArea?.id]);
         message.success("Neighbor added successfully");
         setIsModalVisible(false);
         form.resetFields();
@@ -107,7 +125,19 @@ export default function AreaNeighborsPage() {
   // Função chamada após login bem-sucedido
   const handleLoginSuccess = () => {
     setIsLoginModalVisible(false);
-    setIsModalVisible(true);
+
+    // Verificar se há uma operação de exclusão pendente
+    const pendingDeleteId = sessionStorage.getItem("pendingDeleteNeighborId");
+    if (pendingDeleteId) {
+      sessionStorage.removeItem("pendingDeleteNeighborId");
+      Modal.confirm({
+        title: "Are you sure you want to remove this neighbor relationship?",
+        onOk: () => deleteMutation.mutate(pendingDeleteId),
+      });
+    } else {
+      // Se não houver exclusão pendente, abrir o modal de adição
+      setIsModalVisible(true);
+    }
   };
 
   // Delete area neighbor relationship
@@ -115,7 +145,9 @@ export default function AreaNeighborsPage() {
     (id: string) => areaNeighborApi.delete(id),
     {
       onSuccess: () => {
+        // Invalidate both neighbors and history queries
         queryClient.invalidateQueries(["areaNeighbors", selectedArea?.id]);
+        queryClient.invalidateQueries(["neighborHistory", selectedArea?.id]);
         message.success("Area neighbor relationship deleted successfully");
       },
       onError: (error: any) => {
@@ -123,6 +155,20 @@ export default function AreaNeighborsPage() {
       },
     }
   );
+
+  // Função para verificar autenticação antes de deletar vizinho
+  const handleDeleteNeighbor = (id: string) => {
+    if (!isAuthenticated) {
+      setIsLoginModalVisible(true);
+      // Armazenar o ID do vizinho a ser excluído após o login
+      sessionStorage.setItem("pendingDeleteNeighborId", id);
+    } else {
+      Modal.confirm({
+        title: "Are you sure you want to remove this neighbor relationship?",
+        onOk: () => deleteMutation.mutate(id),
+      });
+    }
+  };
 
   // Filter out areas that are already neighbors or the selected area itself
   const availableNeighbors = useMemo(() => {
@@ -186,7 +232,70 @@ export default function AreaNeighborsPage() {
     });
   };
 
-  const columns: TableProps<any>["columns"] = [
+  // Format history data from the API
+  const getHistoryData = () => {
+    if (!selectedArea || !neighborHistory) return [];
+
+    return neighborHistory.map((entry) => {
+      // Format the event type for display
+      let action = "";
+      switch (entry.eventType) {
+        case "created":
+          action = "Created";
+          break;
+        case "updated":
+          action = "Updated";
+          break;
+        case "deleted":
+          action = "Deleted";
+          break;
+        default:
+          action = entry.eventType;
+      }
+
+      // Format the timestamp
+      const timestamp = entry.eventDate
+        ? new Date(entry.eventDate).toLocaleString()
+        : "Unknown";
+
+      // Create details message based on event type
+      let details = "";
+      switch (entry.eventType) {
+        case "created":
+          details = `Added ${
+            entry.neighborArea?.name || "Unknown"
+          } as a neighbor`;
+          break;
+        case "updated":
+          details = `Updated neighbor relationship with ${
+            entry.neighborArea?.name || "Unknown"
+          }`;
+          break;
+        case "deleted":
+          details = `Removed ${
+            entry.neighborArea?.name || "Unknown"
+          } as a neighbor`;
+          break;
+        default:
+          details = `${action} neighbor relationship with ${
+            entry.neighborArea?.name || "Unknown"
+          }`;
+      }
+
+      return {
+        id: `${entry.eventType}-${entry.id}`,
+        action,
+        neighborName: entry.neighborArea?.name || "Unknown",
+        plantName: entry.neighborArea?.plant?.name || "Unknown",
+        performedBy: entry.eventUser?.name || "Unknown",
+        timestamp,
+        details,
+      };
+    });
+  };
+
+  // Columns for the neighbors table
+  const neighborColumns: TableProps<any>["columns"] = [
     {
       title: "Neighbor Area",
       dataIndex: "neighborName",
@@ -231,15 +340,43 @@ export default function AreaNeighborsPage() {
         <Button
           icon={<DeleteOutlined />}
           danger
-          onClick={() => {
-            Modal.confirm({
-              title:
-                "Are you sure you want to remove this neighbor relationship?",
-              onOk: () => deleteMutation.mutate(record.id),
-            });
-          }}
+          onClick={() => handleDeleteNeighbor(record.id)}
         />
       ),
+    },
+  ];
+
+  // Columns for the history table
+  const historyColumns: TableProps<any>["columns"] = [
+    {
+      title: "Action",
+      dataIndex: "action",
+      key: "action",
+      width: 100,
+    },
+    {
+      title: "Neighbor Area",
+      dataIndex: "neighborName",
+      key: "neighborName",
+      sorter: (a, b) => a.neighborName.localeCompare(b.neighborName),
+    },
+    {
+      title: "Performed By",
+      dataIndex: "performedBy",
+      key: "performedBy",
+      sorter: (a, b) => a.performedBy.localeCompare(b.performedBy),
+    },
+    {
+      title: "Details",
+      dataIndex: "details",
+      key: "details",
+    },
+    {
+      title: "Date",
+      dataIndex: "timestamp",
+      key: "timestamp",
+      sorter: (a, b) =>
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
     },
   ];
 
@@ -331,7 +468,7 @@ export default function AreaNeighborsPage() {
           </div>
 
           <Table
-            columns={columns}
+            columns={neighborColumns}
             dataSource={getNeighborData()}
             loading={neighborsLoading}
             rowKey="id"
@@ -341,6 +478,20 @@ export default function AreaNeighborsPage() {
               showTotal: (total) => `Total ${total} items`,
             }}
             locale={{ emptyText: "No neighbor areas found" }}
+          />
+          <Divider />
+          <Title level={4}>History</Title>
+          <Table
+            columns={historyColumns}
+            dataSource={getHistoryData()}
+            loading={historyLoading}
+            rowKey="id"
+            pagination={{
+              defaultPageSize: 10,
+              showSizeChanger: true,
+              showTotal: (total) => `Total ${total} items`,
+            }}
+            locale={{ emptyText: "No history found" }}
           />
 
           <Modal

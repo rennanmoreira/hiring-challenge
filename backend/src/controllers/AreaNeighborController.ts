@@ -140,4 +140,15 @@ export class AreaNeighborController extends Controller {
       throw error;
     }
   }
+
+  /**
+   * Retorna o histórico completo de alterações de vizinhança para uma área específica,
+   * incluindo registros excluídos
+   */
+  @Get("history/{areaId}")
+  public async getAreaNeighborHistory(
+    @Path() areaId: string
+  ): Promise<any[]> {
+    return this.areaNeighborService.getAreaNeighborHistory(areaId);
+  }
 }

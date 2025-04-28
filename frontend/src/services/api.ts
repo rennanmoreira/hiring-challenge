@@ -153,6 +153,22 @@ export const partApi = {
   delete: (id: string) => api.delete(`/parts/${id}`),
 };
 
+export interface AreaNeighborHistoryEntry {
+  id: string;
+  eventType: 'created' | 'updated' | 'deleted';
+  eventDate: string;
+  eventUser: {
+    id: string;
+    name: string;
+    username: string;
+  };
+  mainArea: Area;
+  neighborArea: Area;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
+}
+
 export const areaNeighborApi = {
   getAll: () => api.get<AreaNeighbor[]>('/area-neighbors'),
   getByAreaId: (areaId: string) => api.get<AreaNeighbor[]>(`/area-neighbors?areaId=${areaId}`),
@@ -162,6 +178,7 @@ export const areaNeighborApi = {
   update: (id: string, data: Partial<Omit<AreaNeighbor, 'id' | 'createdAt' | 'updatedAt'>>) =>
     api.put<AreaNeighbor>(`/area-neighbors/${id}`, data),
   delete: (id: string) => api.delete(`/area-neighbors/${id}`),
+  getHistory: (areaId: string) => api.get<AreaNeighborHistoryEntry[]>(`/area-neighbors/history/${areaId}`),
 };
 
 export const equipmentAreaApi = {

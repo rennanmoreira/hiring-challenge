@@ -1402,6 +1402,36 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsAreaNeighborController_getAreaNeighborHistory: Record<string, TsoaRoute.ParameterSchema> = {
+                areaId: {"in":"path","name":"areaId","required":true,"dataType":"string"},
+        };
+        app.get('/area-neighbors/history/:areaId',
+            ...(fetchMiddlewares<RequestHandler>(AreaNeighborController)),
+            ...(fetchMiddlewares<RequestHandler>(AreaNeighborController.prototype.getAreaNeighborHistory)),
+
+            async function AreaNeighborController_getAreaNeighborHistory(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsAreaNeighborController_getAreaNeighborHistory, request, response });
+
+                const controller = new AreaNeighborController();
+
+              await templateService.apiHandler({
+                methodName: 'getAreaNeighborHistory',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsAreaController_getAreas: Record<string, TsoaRoute.ParameterSchema> = {
         };
         app.get('/areas',

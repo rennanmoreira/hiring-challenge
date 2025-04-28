@@ -3,6 +3,7 @@ import { AppDataSource } from "../config/database";
 import { Repository, IsNull, Not } from "typeorm";
 import { ApiError } from "../utils/ApiError";
 import { ExpressRequestWithUser } from "src/middleware/authentication";
+import { User } from "../models/User";
 
 export class AreaNeighborService {
   private repo: Repository<AreaNeighbor>;
@@ -28,7 +29,7 @@ export class AreaNeighborService {
     if (data.areaId === data.neighborAreaId) {
       throw ApiError.validation("An area cannot be a neighbor to itself", {
         areaId: data.areaId,
-        neighborAreaId: data.neighborAreaId
+        neighborAreaId: data.neighborAreaId,
       });
     }
 
@@ -50,7 +51,7 @@ export class AreaNeighborService {
       throw ApiError.conflict("These areas are already neighbors", {
         areaId: data.areaId,
         neighborAreaId: data.neighborAreaId,
-        existingRelationId: existing.id
+        existingRelationId: existing.id,
       });
     }
 
@@ -66,7 +67,7 @@ export class AreaNeighborService {
         areaId: data.areaId,
         neighborAreaId: data.neighborAreaId,
         areaExists: !!area,
-        neighborAreaExists: !!neighborArea
+        neighborAreaExists: !!neighborArea,
       });
     }
 
@@ -78,7 +79,7 @@ export class AreaNeighborService {
           areaId: data.areaId,
           areaPlantId: area.plantId,
           neighborAreaId: data.neighborAreaId,
-          neighborAreaPlantId: neighborArea.plantId
+          neighborAreaPlantId: neighborArea.plantId,
         }
       );
     }
@@ -155,7 +156,7 @@ export class AreaNeighborService {
     ) {
       throw ApiError.validation("An area cannot be a neighbor to itself", {
         areaId: data.areaId,
-        neighborAreaId: data.neighborAreaId
+        neighborAreaId: data.neighborAreaId,
       });
     }
 
@@ -178,7 +179,7 @@ export class AreaNeighborService {
         throw ApiError.conflict("This neighbor relationship already exists", {
           areaId: newAreaId,
           neighborAreaId: newNeighborAreaId,
-          existingRelationId: existingRelation.id
+          existingRelationId: existingRelation.id,
         });
       }
 
@@ -191,7 +192,9 @@ export class AreaNeighborService {
         if (data.areaId) {
           area = await areaRepo.findOne({ where: { id: data.areaId } });
           if (!area) {
-            throw ApiError.validation("Area does not exist", { areaId: data.areaId });
+            throw ApiError.validation("Area does not exist", {
+              areaId: data.areaId,
+            });
           }
         } else {
           area = await areaRepo.findOne({ where: { id: relation.areaId } });
@@ -203,7 +206,9 @@ export class AreaNeighborService {
             where: { id: data.neighborAreaId },
           });
           if (!neighborArea) {
-            throw ApiError.validation("Neighbor area does not exist", { neighborAreaId: data.neighborAreaId });
+            throw ApiError.validation("Neighbor area does not exist", {
+              neighborAreaId: data.neighborAreaId,
+            });
           }
         } else {
           neighborArea = await areaRepo.findOne({
@@ -219,7 +224,7 @@ export class AreaNeighborService {
               areaId: area.id,
               areaPlantId: area.plantId,
               neighborAreaId: neighborArea.id,
-              neighborAreaPlantId: neighborArea.plantId
+              neighborAreaPlantId: neighborArea.plantId,
             }
           );
         }
@@ -285,5 +290,67 @@ export class AreaNeighborService {
     }
 
     return true;
+  }
+
+  /**
+   * Retorna o histórico completo de alterações de vizinhança para uma área específica,
+   * incluindo registros excluídos
+   * @param areaId ID da área para buscar o histórico
+   * @returns Lista de registros de vizinhança com informações sobre criação, atualização e exclusão
+   */
+  async getAreaNeighborHistory(areaId: string) {
+    // Buscar todas as relações onde a área é a principal ou a vizinha, incluindo excluídas
+    const relations = await this.repo
+      .createQueryBuilder("areaNeighbor")
+      .leftJoinAndSelect("areaNeighbor.area", "area")
+      .leftJoinAndSelect("areaNeighbor.neighborArea", "neighborArea")
+      .leftJoinAndSelect("areaNeighbor.createdByUser", "createdByUser")
+      .leftJoinAndSelect("areaNeighbor.updatedByUser", "updatedByUser")
+      .where("(areaNeighbor.areaId = :areaId)")
+      .withDeleted() // Incluir registros excluídos
+      .setParameter("areaId", areaId)
+      .orderBy("areaNeighbor.createdAt", "DESC")
+      .getMany();
+
+    // Processar os resultados para incluir informações sobre o status (criado, atualizado, excluído)
+    const history: (AreaNeighbor & {
+      eventType: string;
+      eventDate: Date;
+      eventUser: User;
+    })[] = [];
+    relations.forEach((relation) => {
+      // Determinar o tipo de evento (criação, atualização, exclusão)
+      let eventType = "created";
+      let eventDate = relation.createdAt;
+      let eventUser = relation.createdByUser;
+
+      if (relation.deletedAt) {
+        // Não temos usuário que excluiu, então usamos o último que atualizou
+        history.push({
+          ...relation,
+          eventType: "deleted",
+          eventDate: relation.deletedAt,
+          eventUser: relation.updatedByUser || relation.createdByUser,
+        });
+      } else {
+        if (relation.updatedAt > relation.createdAt) {
+          eventType = "updated";
+          eventDate = relation.updatedAt;
+          if (relation.updatedByUser) {
+            eventUser = relation.updatedByUser;
+          }
+        }
+      }
+
+      history.push({
+        ...relation,
+        eventType,
+        eventDate,
+        eventUser,
+      });
+    });
+    return history.sort(
+      (a, b) => b.eventDate.getTime() - a.eventDate.getTime()
+    );
   }
 }

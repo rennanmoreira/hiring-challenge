@@ -36,7 +36,7 @@ const LoginModal: React.FC<LoginModalProps> = ({
 
   return (
     <Modal
-      title="Login Required"
+      title="Login required to manipulate area neighbors"
       open={visible}
       onCancel={onCancel}
       footer={null}
