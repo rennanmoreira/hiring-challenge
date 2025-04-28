@@ -1,6 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from "typeorm";
 import { Plant } from "./Plant";
 import { Equipment } from "./Equipment";
+import { AreaNeighbor } from "./AreaNeighbor";
 
 @Entity()
 export class Area {
@@ -21,6 +22,12 @@ export class Area {
 
     @OneToMany(() => Equipment, equipment => equipment.area)
     equipment?: Equipment[];
+
+    @OneToMany(() => AreaNeighbor, neighbor => neighbor.area)
+    neighbors?: AreaNeighbor[];
+
+    @OneToMany(() => AreaNeighbor, neighbor => neighbor.neighborArea)
+    neighborOf?: AreaNeighbor[];
 
     @Column({ type: "datetime", default: () => "CURRENT_TIMESTAMP" })
     createdAt!: Date;

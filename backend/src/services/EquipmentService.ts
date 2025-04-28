@@ -1,10 +1,7 @@
 import { Equipment } from "../models/Equipment";
 import { DatabaseContext } from "../config/database-context";
 import { Repository, QueryFailedError } from "typeorm";
-import { EquipmentNotFoundError } from "../errors/EquipmentNotFoundError";
-import { InvalidForeignKeyError } from "../errors/InvalidForeignKeyError";
-import { InvalidDataError } from "../errors/InvalidDataError";
-import { DependencyExistsError } from "../errors/DependencyExistsError";
+import { ApiError } from "../utils/ApiError";
 
 export class EquipmentService {
     private equipmentRepository: Repository<Equipment>;
@@ -25,7 +22,7 @@ export class EquipmentService {
             relations: ["area", "parts"]
         });
         if (!equipment) {
-            throw new EquipmentNotFoundError();
+            throw ApiError.notFound("Equipment not found", { id });
         }
         return equipment;
     }
@@ -40,10 +37,10 @@ export class EquipmentService {
             }) as Promise<Equipment>;
         } catch (error) {
             if (error instanceof QueryFailedError && error.message.includes('FOREIGN KEY')) {
-                throw new InvalidForeignKeyError("Invalid area ID");
+                throw ApiError.validation("Invalid area ID", { areaId: data.areaId, error: error.message });
             }
             if (error instanceof QueryFailedError) {
-                throw new InvalidDataError("Invalid equipment data");
+                throw ApiError.validation("Invalid equipment data", { data, error: error.message });
             }
             throw error;
         }
@@ -56,7 +53,7 @@ export class EquipmentService {
                 relations: ["area"]
             });
             if (!equipment) {
-                throw new EquipmentNotFoundError();
+                throw ApiError.notFound("Equipment not found", { id });
             }
 
             Object.assign(equipment, data);
@@ -67,29 +64,48 @@ export class EquipmentService {
             }) as Promise<Equipment>;
         } catch (error) {
             if (error instanceof QueryFailedError && error.message.includes('FOREIGN KEY')) {
-                throw new InvalidForeignKeyError("Invalid area ID");
+                throw ApiError.validation("Invalid area ID", { areaId: data.areaId, error: error.message });
             }
             if (error instanceof QueryFailedError) {
-                throw new InvalidDataError("Invalid equipment data");
+                throw ApiError.validation("Invalid equipment data", { data, error: error.message });
             }
             throw error;
         }
     }
 
     public async delete(id: string): Promise<void> {
+        // Buscar equipamento com suas partes
         const equipment = await this.equipmentRepository.findOne({ 
             where: { id },
             relations: ["parts"]
         });
+        
         if (!equipment) {
-            throw new EquipmentNotFoundError();
+            throw ApiError.notFound("Equipment not found", { id });
+        }
+
+        // Verificar se o equipamento possui partes associadas
+        if (equipment.parts && equipment.parts.length > 0) {
+            const partNames = equipment.parts.map(part => part.name);
+            throw ApiError.dependencyConflict(
+                "Cannot delete equipment with associated parts", 
+                { 
+                    equipmentId: id, 
+                    equipmentName: equipment.name,
+                    dependentParts: partNames,
+                    partCount: equipment.parts.length 
+                }
+            );
         }
 
         try {
             await this.equipmentRepository.remove(equipment);
         } catch (error) {
             if (error instanceof QueryFailedError) {
-                throw new DependencyExistsError("Cannot delete equipment with associated parts");
+                throw ApiError.dependencyConflict(
+                    "Cannot delete equipment due to database constraints", 
+                    { error: error.message }
+                );
             }
             throw error;
         }

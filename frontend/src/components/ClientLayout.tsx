@@ -2,6 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from "react-query";
 import MainLayout from "@/components/Layout";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 const queryClient = new QueryClient();
 
@@ -12,7 +13,9 @@ export default function ClientLayout({
 }) {
   return (
     <QueryClientProvider client={queryClient}>
-      <MainLayout>{children}</MainLayout>
+      <AuthProvider>
+        <MainLayout>{children}</MainLayout>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

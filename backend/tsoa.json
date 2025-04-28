@@ -4,10 +4,29 @@
   "controllerPathGlobs": ["src/controllers/**/*.ts"],
   "spec": {
     "outputDirectory": "public",
-    "specVersion": 3
+    "specVersion": 3,
+    "securityDefinitions": {
+      "jwt": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
   },
   "routes": {
     "routesDir": "src/routes",
-    "middleware": "express"
+    "middleware": "express",
+    "authenticationModule": "./src/middleware/authentication.ts"
+  },
+  "authentication": {
+    "jwt": {
+      "name": "jwt",
+      "in": "header",
+      "schema": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
   }
 }
